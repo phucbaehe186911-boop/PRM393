@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-001",
+  "type": "chore",
+  "description": "Project infrastructure: add Firebase dependencies to pubspec.yaml, wire google-services plugin into both Gradle files, and hand-write lib/firebase_options.dart from google-services.json values. No Dart logic changes. Independent of FEAT-002 and FEAT-003 except that pub get must succeed before flutter analyze.",
+  "status": "completed",
+  "steps": [
+    "Edit /Users/laphuonganh/Workspace/PRM/sportzone/pubspec.yaml: under 'dependencies → # Database' section add 'firebase_core: ^3.6.0' and 'cloud_firestore: ^5.4.4'. Remove 'sqflite: ^2.3.3' and 'path: ^1.9.0'. Keep every other dependency and the dependency_overrides block (shared_preferences_android: 2.3.4) unchanged.",
+    "Edit /Users/laphuonganh/Workspace/PRM/sportzone/android/build.gradle.kts: PREPEND the following block as the very first lines, BEFORE the existing 'allprojects {' block:\n\nplugins {\n  id(\"com.google.gms.google-services\") version \"4.5.0\" apply false\n}\n\nDo not modify any existing lines.",
+    "Edit /Users/laphuonganh/Workspace/PRM/sportzone/android/app/build.gradle.kts: inside the existing 'plugins {' block (which currently has 'id(\"com.android.application\")' and 'id(\"dev.flutter.flutter-gradle-plugin\")'), add a new line: id(\"com.google.gms.google-services\"). Keep isCoreLibraryDesugaringEnabled = true and the coreLibraryDesugaring(\"com.android.tools:desugar_jdk_libs:2.1.4\") dependency unchanged.",
+    "Create /Users/laphuonganh/Workspace/PRM/sportzone/lib/firebase_options.dart with the following content (values from android/app/google-services.json):\n\nimport 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\nimport 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform {\n    if (kIsWeb) throw UnsupportedError('Web platform is not supported.');\n    switch (defaultTargetPlatform) {\n      case TargetPlatform.android:\n        return android;\n      default:\n        throw UnsupportedError('Platform $defaultTargetPlatform is not supported.');\n    }\n  }\n\n  static const FirebaseOptions android = FirebaseOptions(\n    apiKey: 'AIzaSyCbeQ-XyrQKZwr05paTOYNP6q-QkfZU_bA',\n    appId: '1:806227551498:android:ecf9f62b1d5f723f60c6f3',\n    messagingSenderId: '806227551498',\n    projectId: 'sportzone-prm393',\n    storageBucket: 'sportzone-prm393.firebasestorage.app',\n  );\n}",
+    "Run: cd /Users/laphuonganh/Workspace/PRM/sportzone && flutter pub get. Fix any resolution errors before proceeding."
+  ],
+  "acceptance_criteria": [
+    "pubspec.yaml contains firebase_core: ^3.6.0 and cloud_firestore: ^5.4.4",
+    "pubspec.yaml does NOT contain sqflite or path dependencies",
+    "android/build.gradle.kts first block is the plugins { id(\"com.google.gms.google-services\") ... } block",
+    "android/app/build.gradle.kts plugins block contains id(\"com.google.gms.google-services\")",
+    "android/app/build.gradle.kts still has isCoreLibraryDesugaringEnabled = true",
+    "lib/firebase_options.dart exists with correct appId, apiKey, projectId, storageBucket",
+    "flutter pub get exits 0"
+  ],
+  "verification": [
+    "cd /Users/laphuonganh/Workspace/PRM/sportzone && flutter pub get"
+  ],
+  "blocked_reason": null,
+  "findings": "flutter pub get succeeded (exit 0). firebase_core resolved to 3.15.2 (within ^3.6.0) and cloud_firestore to 5.6.12 (within ^5.4.4). sqflite and path remain as transitive deps (pulled by other packages) but are no longer direct deps. dependency_overrides block for shared_preferences_android: 2.3.4 kept intact."
+}
